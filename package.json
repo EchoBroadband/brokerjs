@@ -1,0 +1,40 @@
+{
+  "name": "brokerjs",
+  "description": "Simple interprocess message bus with fancy features.",
+  "version": "0.0.1",
+  "author": "Mike Whitaker <mike@echobroadband.net>",
+  "contributors": [
+    "Caleb Bartholomew <caleb@echobroadband.net>"
+  ],
+  "license": "MIT",
+  "repository": "echobnet/brokerjs",
+  "homepage": "http://brokerjs.com/",
+  "scripts": {
+    "test": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
+    "jtest": "jenkins-mocha --cobertura test/*",
+    "doc": "esdoc -c esdoc.json"
+  },
+  "keywords": [
+    "broker",
+    "mediator",
+    "message",
+    "bus"
+  ],
+  "dependencies": {
+    "shortid": "^2.2.4"
+  },
+  "devDependencies": {
+    "esdoc": "^0.4.3",
+    "istanbul": "^0.4.1",
+    "mocha": "^2.3.4"
+  },
+  "engines": {
+    "node": ">= 4.1.0"
+  },
+  "files": [
+    "LICENSE",
+    "Readme.md",
+    "index.js",
+    "lib/"
+  ]
+}
