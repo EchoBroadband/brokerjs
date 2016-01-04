@@ -56,22 +56,6 @@ describe('BrokerJS', function() {
 			assert(broker.clear);
 		});
 
-		it('.off should accept arguments properly', function() {
-
-			// Check default expected arguments (that no error is thrown and that true/false is returned:
-			let result = broker.off('a:b:c', function(){});
-			assert(result === false);
-
-			// Pass a "subscriptionId" instead of a channelId; omitting the callback
-			result = broker.off('#abcd1234');
-			assert(result === false);
-
-			// Check empty arguments:
-			assert.throws(function(){
-				result = broker.off();
-			}, 'Missing arguments with "off" function did not throw an error.');
-
-		});
 	});
 
 	/** @test {Broker#functionality} */
@@ -291,24 +275,21 @@ describe('BrokerJS', function() {
 
 	Write tests for: 
 		priorities
-		cancellations
 		* patterns
 		event object integrity
 */
 
-		it('it should emit with valid channelId and no data', function(done) {
+		it('should emit with valid channelId and no data', function(done) {
 			// Check default expected arguments:
 			let chanId = 'emit:valid:id';
 			let emitted = false;
 
 			// Listen to what's emitted.
 			broker.on(chanId, function(event) {
+				assert(event.channelId == 'emit:valid:id', 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == 'emit:valid:id', 'Subscription channelId was incorrect.');
 				assert.equal(null, event.data, 'Data on no-data emit was not null ('+chanId+')');
 				emitted = true;
-
-				return new Promise((complete, cancel)=>{
-					complete();
-				});
 			});
 
 			let result = broker.emit(chanId);
@@ -316,14 +297,14 @@ describe('BrokerJS', function() {
 			// Make sure we're returned a promise.
 			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
 
-			// Verify completion of emition at promise resolution.
+			// Verify completion of emission at promise resolution.
 			result.then(function(){
 				assert(emitted == true, 'Event was never emitted ('+chanId+')');
 				done();
 			}).catch(done);
 		});
 
-		it('it should emit with valid channelId and data', function(done) {
+		it('should emit with valid channelId and data', function(done) {
 			// Check default expected arguments:
 			let chanId = 'emit:valid:id:and:data';
 			let emitted = false;
@@ -331,6 +312,8 @@ describe('BrokerJS', function() {
 
 			// Listen to what's emitted.
 			broker.on(chanId, function(event) {
+				assert(event.channelId == 'emit:valid:id:and:data', 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == 'emit:valid:id:and:data', 'Subscription channelId was incorrect.');
 				assert(event.data, 'Data was null ('+chanId+') ' + util.inspect(event));
 				assert(event.data.name == 'bob', 'Data was wrong ('+chanId+')');
 				emitted = true;
@@ -341,14 +324,14 @@ describe('BrokerJS', function() {
 			// Make sure we're returned a promise.
 			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
 
-			// Verify completion of emition at promise resolution.
+			// Verify completion of emission at promise resolution.
 			result.then(function(){
 				assert(emitted === true, 'Event was never emitted ('+chanId+')');
 				done();
 			}).catch(done);
 		});
 
-		it('it should emit with a valid non-existant channelId', function(done) {
+		it('should emit with a valid non-existant channelId', function(done) {
 			// Check default expected arguments:
 			let chanId = 'emit:nonexistant:id';
 			let result = broker.emit(chanId);
@@ -356,13 +339,128 @@ describe('BrokerJS', function() {
 			// Make sure we're returned a promise.
 			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
 
-			// Verify completion of emition at promise resolution.
+			// Verify completion of emission at promise resolution.
 			result.then(function(){
 				done();
 			}).catch(done);
-		});		
+		});
 
-		it('it should fail with an invalid channelId', function() {
+		it('should emit properly with * subscriptions', function(done) {
+			// Check default expected arguments:
+			let chanId = 'emit:with:*';
+			let emitted = false;
+			let data = {name:'bob'};
+
+			// Listen to what's emitted.
+			broker.on(chanId, function(event) {
+				assert(event.channelId == 'emit:with:random:id', 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == 'emit:with:*', 'Subscription channelId was incorrect.');
+				assert(event.data, 'Data was null ('+chanId+') ' + util.inspect(event));
+				assert(event.data.name == 'bob', 'Data was wrong ('+chanId+')');
+
+				emitted = true;
+			});
+
+			let result = broker.emit('emit:with:random:id', data);
+
+			// Make sure we're returned a promise.
+			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
+
+			// Verify completion of emission at promise resolution.
+			result.then(function(){
+				assert(emitted === true, 'Event was never emitted ('+chanId+')');
+				done();
+			}).catch(done);
+
+		});
+
+		it('should emit in order of subscription priorities', function(done) {
+			let chanId = 'emit:with:priorities';
+			let correctOrder = '136';
+			let testedOrder = '';
+
+			// Listen to what's emitted.
+			broker.on(chanId, {priority:6}, function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 6, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			});
+
+			broker.on(chanId, {priority:1}, function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 1, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			});
+
+			broker.on(chanId, {priority:3}, function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 3, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			});
+
+			let result = broker.emit(chanId);
+
+			// Make sure we're returned a promise.
+			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
+
+			// Verify completion of emission at promise resolution.
+			result.then(function(){
+				assert(testedOrder.length == correctOrder.length, 'Tested Order length not correct ('+chanId+').');
+				assert(testedOrder == correctOrder, 'Tested order was not in order [' + testedOrder + '] ('+chanId+').');
+				done();
+			}).catch(done);
+		});
+
+		it('should emit to multiple channelIds in order of length', function(done) {
+			let chanId = 'emit:to:multiple:channel:ids:in:order';
+			let correctOrder = '12345';
+			let testedOrder = '';
+
+			broker.on('emit:to:*', {id:5}, function(event) {
+				assert(event.subscription.options.id == 5, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
+				testedOrder += event.subscription.options.id;
+			});
+
+			broker.on('emit:to:multiple:channel:ids:in:order', {id:1}, function(event) {
+				assert(event.subscription.options.id == 1, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
+				testedOrder += event.subscription.options.id;
+			});
+
+			broker.on('emit:to:multiple:*', {id:4}, function(event) {
+				assert(event.subscription.options.id == 4, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
+				testedOrder += event.subscription.options.id;
+			});
+
+			broker.on('emit:to:multiple:channel:ids:*', {id:2}, function(event) {
+				assert(event.subscription.options.id == 2, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
+				testedOrder += event.subscription.options.id;
+			});
+
+			broker.on('emit:to:multiple:channel:*', {id:3}, function(event) {
+				assert(event.subscription.options.id == 3, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
+				testedOrder += event.subscription.options.id;
+			});
+
+			let result = broker.emit(chanId);
+
+			// Make sure we're returned a promise.
+			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
+
+			// Verify completion of emission at promise resolution.
+			result.then(function(){
+				assert(testedOrder.length == correctOrder.length, 'Tested Order length not correct ('+testedOrder+') ('+chanId+').');
+				assert(testedOrder == correctOrder, 'Tested order was not in order [' + testedOrder + '] ('+chanId+').');
+				done();
+			}).catch(done);
+		});
+
+		it('should fail with an invalid channelId', function() {
 			let result;
 
 			// Test missing channel id and data.
@@ -386,7 +484,28 @@ describe('BrokerJS', function() {
 			}, 'Function channelId on "emit" did not throw an error.');			
 		});
 
+
 	}); // End "emit" test.
+
+	/** @test {Broker#off/unsubscribe/unregister} */
+	describe('#off/unsubscribe/unregister', function() {
+		it('should ignore the unsubscription of an non-existant subscription', function() {
+			// Check default expected arguments (that no error is thrown and that true/false is returned:
+			let result = broker.off('a:b:c', function(){});
+			assert(result === false);
+
+			// Pass an arbitrary hash/id instead of a channelId; omitting the callback
+			result = broker.off('abcd1234');
+			assert(result === false);
+
+			// Check empty arguments:
+			assert.throws(function(){
+				result = broker.off();
+			}, 'Missing arguments with "off" function did not throw an error.');
+
+		});
+
+	}); // End #off/unsubscribe/deregister
 
 
 });
