@@ -1,5 +1,7 @@
 # BrokerJS (.com)
 
+![Build Status][BS img]
+
 [BrokerJS] is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces with wild-cards. It is fully documented and thoroughly tested. View documentation and examples [here].
  
 ### Version
@@ -44,5 +46,6 @@ MIT
    [NodeJS]: <http://nodejs.org>
    [BrokerJS]: <http://brokerjs.com>
    [here]: <http://brokerjs.com>
+   [BS img]: <https://codeship.com/projects/51834170-9606-0133-3125-3e79f15ecc1c/status>
 
 
