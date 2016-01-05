@@ -7,8 +7,8 @@ let util = require('util');
 
 let Broker, broker;
 
-/** @test {BrokerJS} */
-describe('BrokerJS', function() {
+/** @test {Broker} */
+describe('Broker', function() {
 	before(function() {
 		Broker = require('../lib/Brokerjs');
 	});
@@ -31,7 +31,7 @@ describe('BrokerJS', function() {
 		broker = null;
 	});
 
-	/** @test {BrokerJS#api} */
+	/** @test {Broker#api} */
 	describe('Library Basics', function() {
 		// beforeEach(function() {
 		// });
@@ -58,7 +58,7 @@ describe('BrokerJS', function() {
 
 	});
 
-	/** @test {Broker#functionality} */
+	/** @test {Broker#on} */
 	describe('#on/subscribe/register', function() {
 		let testForSub = function(subId, channel, callback, extra) {
 			// Get a list of subscribers and check if its valid. 
@@ -81,9 +81,6 @@ describe('BrokerJS', function() {
 			if(extra && typeof extra == 'function')
 				extra(foundSub);
 		}
-
-		// beforeEach(function() {
-		// });
 
 		it('should accept new subscriptions with options', function() {
 			let mycallback = function(){};
@@ -293,7 +290,7 @@ describe('BrokerJS', function() {
 
 	});	// End "on" test.
 
-	/** @test {Broker#emit/publish/trigger} */
+	/** @test {Broker#emit} */
 	describe('#emit/publish/trigger', function() {
 		it('should emit with valid channelId and no data', function(done) {
 			// Check default expected arguments:
@@ -554,7 +551,7 @@ describe('BrokerJS', function() {
 
 	}); // End "emit" test.
 
-	/** @test {Broker#off/unsubscribe/unregister} */
+	/** @test {Broker#off} */
 	describe('#off/unsubscribe/unregister', function() {
 		it('should ignore the unsubscription of an non-existant subscription/channel id', function() {
 			// Check default expected arguments (that no error is thrown and that true/false is returned:
