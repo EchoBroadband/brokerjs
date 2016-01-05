@@ -1,13 +1,13 @@
 # BrokerJS (.com)
 
-BrokerJS is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces and wild-cards.
+[BrokerJS] is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces with wild-cards. It is fully documented and thoroughly tested. View documentation and examples [here].
  
 ### Version
-0.0.1
+0.5.0
 
 ### Tech
 
-BrokerJS runs on [NodeJS] and in the browser. It requires NodeJS 4.0.0 or greater (uses ECMA6).
+BrokerJS runs on [NodeJS] ~~and in the browser~~. It requires NodeJS 4.0.0 or greater (uses ECMA6).
 
 ### Installation
 
@@ -28,7 +28,7 @@ RequireJS:
 
 ### Todos
 
- - Write Tests
+ - Finish BrokerJS.com
 
 License
 ----
@@ -42,5 +42,7 @@ MIT
 
    [git-repo-url]: <https://github.com/echobnet/brokerjs>
    [NodeJS]: <http://nodejs.org>
+   [BrokerJS]: <http://brokerjs.com>
+   [here]: <http://brokerjs.com>
 
 
