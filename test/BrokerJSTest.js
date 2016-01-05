@@ -212,7 +212,6 @@ describe('BrokerJS', function() {
 			}, 'Function options did not throw an error ('+channel+').');
 		});
 
-
 		it('should not duplicate existing subscriptions', function() {
 			let subId, channel, dupSubId;
 			let mycallback = function(){};
@@ -238,12 +237,12 @@ describe('BrokerJS', function() {
 			});
 		});
 
-		it('should allow forced options onto existing subscriptions', function() {
+		it('should allow forced options onto existing subscriptions with callback', function() {
 			let subId, channel, dupSubId;
 			let mycallback = function(){};
 
 			// Create initial subscription
-			channel = 'new:to:be:forced';
+			channel = 'new:to:be:forced:with:callback';
 			subId = broker.on(channel, {priority:5}, mycallback);
 			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
 			testForSub(subId, channel, mycallback);
@@ -264,21 +263,38 @@ describe('BrokerJS', function() {
 				assert(sub.options.priority === 1, 'Not-forced options were changed.');
 			});
 		});
+
+		it('should allow forced options onto existing subscriptions with subId', function() {
+			let subId, channel, dupSubId;
+			let mycallback = function(){};
+
+			// Create initial subscription
+			channel = 'new:to:be:forced:with:subId';
+			subId = broker.on(channel, {priority:5}, mycallback);
+			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
+			testForSub(subId, channel, mycallback);
+
+			// Try to re-add subscription with force flag.
+			dupSubId = broker.on(channel, {priority:1, force:true}, subId);
+			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + forced)('+channel+').');
+			testForSub(dupSubId, channel, mycallback, function(sub){
+				assert(dupSubId == subId, 'DupSubId does not equal subId with force flag.');
+				assert(sub.options.priority === 1, 'Forced options do not match.');
+			});
+
+			// Try to re-add subscription without force flag.
+			dupSubId = broker.on(channel, {priority:9001}, mycallback);
+			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + not-forced)('+channel+').');
+			testForSub(dupSubId, channel, mycallback, function(sub){
+				assert(dupSubId == subId, 'DupSubId does not equal subId without force flag.');
+				assert(sub.options.priority === 1, 'Not-forced options were changed.');
+			});
+		});
+
 	});	// End "on" test.
 
 	/** @test {Broker#emit/publish/trigger} */
 	describe('#emit/publish/trigger', function() {
-		// beforeEach(function() {
-		// });
-
-/**
-
-	Write tests for: 
-		priorities
-		* patterns
-		event object integrity
-*/
-
 		it('should emit with valid channelId and no data', function(done) {
 			// Check default expected arguments:
 			let chanId = 'emit:valid:id';
@@ -417,6 +433,57 @@ describe('BrokerJS', function() {
 			}).catch(done);
 		});
 
+		it('should re-order channel subscription lists when forced options are applied', function(done) {
+			let chanId = 'emit:with:priorities';
+			let correctOrder = '123';
+			let testedOrder = '';
+
+
+			let subCallback = function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 2, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			};
+
+			let subId = broker.on(chanId, {priority:6}, subCallback);
+
+			broker.on(chanId, {priority:1}, function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 1, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			});
+
+			broker.on(chanId, {priority:3}, function(event) {
+				assert(event.channelId == chanId, 'ChannelId was incorrect.');
+				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
+				assert(event.subscription.options.priority == 3, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
+
+				testedOrder += event.subscription.options.priority;
+			});
+
+			// Override with a forced option!
+			let newId = broker.on(chanId, {priority:2, force:true}, subCallback);
+
+			assert(newId == subId, 'Forced subscription id is not the same as the previous id.');
+
+			let result = broker.emit(chanId);
+
+			// Make sure we're returned a promise.
+			assert(result instanceof Promise, 'Emit did not return a promise ('+chanId+').');
+
+			// Verify completion of emission at promise resolution.
+			result.then(function(){
+				assert(testedOrder.length == correctOrder.length, 'Tested Order length not correct ['+testedOrder+'] ('+chanId+').');
+				assert(testedOrder == correctOrder, 'Tested order was not in order [' + testedOrder + '] ('+chanId+').');
+				done();
+			}).catch(done);
+		});
+
+
 		it('should emit to multiple channelIds in order of length', function(done) {
 			let chanId = 'emit:to:multiple:channel:ids:in:order';
 			let correctOrder = '12345';
@@ -502,8 +569,25 @@ describe('BrokerJS', function() {
 			assert.throws(function(){
 				result = broker.off();
 			}, 'Missing arguments with "off" function did not throw an error.');
-
 		});
+
+		it('should accept unsubscription with a valid channel id and callback', function() {
+			let channel = 'valid:unsub';
+			let callback = function(){};
+
+			let subId = broker.on(channel, callback);
+
+			let subs = broker.getSubscribers();
+
+			// Make sure it's there...
+			assert(subs[subId], 'Subscription addition failed in unsubscription test ('+channel+').');
+
+			broker.off(channel, callback);
+
+			subs = broker.getSubscribers();
+			assert(!subs[subId], 'Subscrption was not removed properly ('+channel+').');
+		});
+
 
 	}); // End #off/unsubscribe/deregister
 
