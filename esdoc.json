@@ -1,0 +1,12 @@
+{
+	"title":"BrokerJS",
+	"source": "./lib",
+	"destination": "./doc",
+	"unexportIdentifier": true,
+	"coverage": true,	
+	"access": ["private", "public", "protected"],
+	"test" : {
+		"type": "mocha",
+		"source": "./test"
+	}
+}
