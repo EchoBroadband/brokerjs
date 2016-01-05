@@ -556,7 +556,7 @@ describe('BrokerJS', function() {
 
 	/** @test {Broker#off/unsubscribe/unregister} */
 	describe('#off/unsubscribe/unregister', function() {
-		it('should ignore the unsubscription of an non-existant subscription', function() {
+		it('should ignore the unsubscription of an non-existant subscription/channel id', function() {
 			// Check default expected arguments (that no error is thrown and that true/false is returned:
 			let result = broker.off('a:b:c', function(){});
 			assert(result === false);
@@ -564,19 +564,46 @@ describe('BrokerJS', function() {
 			// Pass an arbitrary hash/id instead of a channelId; omitting the callback
 			result = broker.off('abcd1234');
 			assert(result === false);
+		});
 
-			// Check empty arguments:
+		it('should fail when passed incorrect arguments', function(){
 			assert.throws(function(){
-				result = broker.off();
-			}, 'Missing arguments with "off" function did not throw an error.');
+				broker.off();
+			}, '.off did not throw error with no exceptions.');
+
+			assert.throws(function() {
+				broker.off(123, function(){});
+			}, '.off did not throw error with number + function combo.');
+
+			assert.throws(function() {
+				broker.off(123);
+			}, '.off did not throw error with number.');
+
+			assert.throws(function() {
+				broker.off({}, function(){});
+			}, '.off did not throw error with object + function combo.');
+
+			assert.throws(function() {
+				broker.off({});
+			}, '.off did not throw error with object.');
+
+			assert.throws(function() {
+				broker.off({}, 123);
+			}, '.off did not throw error with object + number combo.');
+
+			assert.throws(function() {
+				broker.off(123, {});
+			}, '.off did not throw error with number + object combo.');
+
+			assert.throws(function() {
+				broker.off(function(){});
+			}, '.off did not throw error with single function.');
 		});
 
 		it('should accept unsubscription with a valid channel id and callback', function() {
-			let channel = 'valid:unsub';
+			let channel = 'valid:unsub:with:channel:id:and:callback';
 			let callback = function(){};
-
 			let subId = broker.on(channel, callback);
-
 			let subs = broker.getSubscribers();
 
 			// Make sure it's there...
@@ -585,9 +612,23 @@ describe('BrokerJS', function() {
 			broker.off(channel, callback);
 
 			subs = broker.getSubscribers();
-			assert(!subs[subId], 'Subscrption was not removed properly ('+channel+').');
+			assert(!subs[subId], 'Subscription was not removed properly ('+channel+').');
 		});
 
+		it('should accept unsubscription with a valid subscription id', function() {
+			let channel = 'valid:unsub:with:subscription:id';
+			let callback = function(){};
+			let subId = broker.on(channel, callback);
+			let subs = broker.getSubscribers();
+
+			// Make sure it's there...
+			assert(subs[subId], 'Subscription addition failed in unsubscription test ('+channel+').');
+
+			broker.off(subId);
+
+			subs = broker.getSubscribers();
+			assert(!subs[subId], 'Subscription was not removed properly ('+channel+').');
+		});
 
 	}); // End #off/unsubscribe/deregister
 
