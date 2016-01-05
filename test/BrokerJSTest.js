@@ -10,7 +10,7 @@ let Broker, broker;
 /** @test {Broker} */
 describe('Broker', function() {
 	before(function() {
-		Broker = require('../lib/Brokerjs');
+		Broker = require('../lib/brokerjs');
 	});
 
 	beforeEach(function() {
