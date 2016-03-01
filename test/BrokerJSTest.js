@@ -7,6 +7,8 @@ let util = require('util');
 
 let Broker, broker;
 
+const VERSION = '0.6.1';
+
 /** @test {Broker} */
 describe('Broker', function() {
 	before(function() {
@@ -39,7 +41,7 @@ describe('Broker', function() {
 		it('should have correct api functions', function() {
 			assert(broker);
 
-			assert(broker.version);
+			assert.equal(broker.version, VERSION);
 			assert(broker.toString());
 
 			assert(broker.subscribe === broker.on);
@@ -87,7 +89,7 @@ describe('Broker', function() {
 			let channel = 'new:with:options';
 			let options = {priority:1};
 
-			let subId = broker.on(channel, options, mycallback);
+			let subId = broker.on(channel, mycallback, options);
 
 			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
 			testForSub(subId, channel, mycallback, function(sub) {
@@ -101,7 +103,7 @@ describe('Broker', function() {
 			let subId;
 
 			// Null options:
-			subId = broker.on(channel, null, mycallback);
+			subId = broker.on(channel, mycallback, null);
 			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
 			testForSub(subId, channel, mycallback, function(sub) {
 				assert(sub.options, 'No default options.');
@@ -124,7 +126,7 @@ describe('Broker', function() {
 			// Missing callback with options:
 			channel = 'new:no:callback:with:options';
 			assert.throws(function(){
-				subId = broker.on(channel, {priority:1});
+				subId = broker.on(channel, null, {priority:1});
 			}, 'Invalid callback function did not throw an error ('+channel+').');
 
 			// Invalid callback with null options:
@@ -142,13 +144,13 @@ describe('Broker', function() {
 			// Invalid callback with null options:
 			channel = 'new:string:callback:null:options';
 			assert.throws(function(){
-				subId = broker.on(channel, null, 'broken!');
+				subId = broker.on(channel, 'broken!', null);
 			}, 'Invalid callback function did not throw an error ('+channel+').');
 
 			// Invalid callback with null options:
 			channel = 'new:number:callback:null:options';
 			assert.throws(function(){
-				subId = broker.on(channel, null, 12358);
+				subId = broker.on(channel, 12358, null);
 			}, 'Invalid callback function did not throw an error ('+channel+').');
 
 			// Invalid callback with no options:
@@ -171,17 +173,17 @@ describe('Broker', function() {
 			// Null channel with options and callback
 			channel = null;
 			assert.throws(function(){
-				subId = broker.on(channel, {priority:1}, function(){});
+				subId = broker.on(channel, function(){}, {priority:1});
 			}, 'Invalid callback function did not throw an error (null with options and callback).');
 
 			// missing channel with options and callback
 			assert.throws(function(){
-				subId = broker.on({priority:1}, function(){});
+				subId = broker.on(function(){}, {priority:1});
 			}, 'Invalid callback function did not throw an error (missing with options and callback).');
 
 			// number channel with options and callback
 			assert.throws(function(){
-				subId = broker.on(12358, {priority:1}, function(){});
+				subId = broker.on(12358, function(){}, {priority:1});
 			}, 'Invalid callback function did not throw an error (number with options and callback).');
 
 		});
@@ -195,17 +197,17 @@ describe('Broker', function() {
 			// String options
 			channel = 'new:string:options';
 			assert.throws(function(){
-				subId = broker.on(channel, 'blahblahblah', mycallback);
+				subId = broker.on(channel, mycallback, 'blahblahblah');
 			}, 'String options did not throw an error ('+channel+').');
 			
 			channel = 'new:number:options';
 			assert.throws(function(){
-				subId = broker.on(channel, 12358, mycallback);
+				subId = broker.on(channel, mycallback, 12358);
 			}, 'Number options did not throw an error ('+channel+').');
 
-			channel = 'new:function :options';
+			channel = 'new:function:options';
 			assert.throws(function(){
-				subId = broker.on(channel, function(){}, mycallback);
+				subId = broker.on(channel, mycallback, function(){});
 			}, 'Function options did not throw an error ('+channel+').');
 		});
 
@@ -227,7 +229,7 @@ describe('Broker', function() {
 			});
 
 			// Try to re-add subscription with different options
-			dupSubId = broker.on(channel, {some:'options'}, mycallback);
+			dupSubId = broker.on(channel, mycallback, {some:'options'});
 			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + options)('+channel+').');
 			testForSub(dupSubId, channel, mycallback, function(sub){
 				assert(dupSubId == subId, 'DupSubId does not equal subId.');
@@ -240,12 +242,12 @@ describe('Broker', function() {
 
 			// Create initial subscription
 			channel = 'new:to:be:forced:with:callback';
-			subId = broker.on(channel, {priority:5}, mycallback);
+			subId = broker.on(channel, mycallback, {priority:5});
 			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
 			testForSub(subId, channel, mycallback);
 
 			// Try to re-add subscription with force flag.
-			dupSubId = broker.on(channel, {priority:1, force:true}, mycallback);
+			dupSubId = broker.on(channel, mycallback, {priority:1, force:true});
 			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + forced)('+channel+').');
 			testForSub(dupSubId, channel, mycallback, function(sub){
 				assert(dupSubId == subId, 'DupSubId does not equal subId with force flag.');
@@ -253,7 +255,7 @@ describe('Broker', function() {
 			});
 
 			// Try to re-add subscription without force flag.
-			dupSubId = broker.on(channel, {priority:9001}, mycallback);
+			dupSubId = broker.on(channel, mycallback, {priority:9001});
 			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + not-forced)('+channel+').');
 			testForSub(dupSubId, channel, mycallback, function(sub){
 				assert(dupSubId == subId, 'DupSubId does not equal subId without force flag.');
@@ -267,12 +269,12 @@ describe('Broker', function() {
 
 			// Create initial subscription
 			channel = 'new:to:be:forced:with:subId';
-			subId = broker.on(channel, {priority:5}, mycallback);
+			subId = broker.on(channel, mycallback, {priority:5});
 			assert(shortid.isValid(subId), 'Invalid subscription id returned ('+channel+').');
 			testForSub(subId, channel, mycallback);
 
 			// Try to re-add subscription with force flag.
-			dupSubId = broker.on(channel, {priority:1, force:true}, subId);
+			dupSubId = broker.on(channel, subId, {priority:1, force:true});
 			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + forced)('+channel+').');
 			testForSub(dupSubId, channel, mycallback, function(sub){
 				assert(dupSubId == subId, 'DupSubId does not equal subId with force flag.');
@@ -280,7 +282,7 @@ describe('Broker', function() {
 			});
 
 			// Try to re-add subscription without force flag.
-			dupSubId = broker.on(channel, {priority:9001}, mycallback);
+			dupSubId = broker.on(channel, mycallback, {priority:9001});
 			assert(shortid.isValid(dupSubId), 'Invalid subscription id returned (duped + not-forced)('+channel+').');
 			testForSub(dupSubId, channel, mycallback, function(sub){
 				assert(dupSubId == subId, 'DupSubId does not equal subId without force flag.');
@@ -358,6 +360,28 @@ describe('Broker', function() {
 			}).catch(done);
 		});
 
+		it('should emit with proper context', function(done) {
+			// Check default expected arguments:
+			let chanId = 'emit:with:context';
+			let myObj = {name:'bob'};
+			let emitted = false;
+
+			// Listen to what's emitted.
+			broker.on(chanId, function(event) {
+				assert.equal(this, myObj, 'Context was wrong ('+chanId+')');
+				assert.equal(this.name, 'bob', 'Context name was wrong ('+chanId+')');
+				emitted = true;
+			}, {context:myObj});
+
+			let result = broker.emit(chanId);
+
+			// Verify completion of emission at promise resolution.
+			result.then(function() {
+				assert(emitted === true, 'Event was never emitted ('+chanId+')');
+				done();
+			}).catch(done);
+		});
+
 		it('should emit properly with * subscriptions', function(done) {
 			// Check default expected arguments:
 			let chanId = 'emit:with:*';
@@ -393,29 +417,29 @@ describe('Broker', function() {
 			let testedOrder = '';
 
 			// Listen to what's emitted.
-			broker.on(chanId, {priority:6}, function(event) {
+			broker.on(chanId, function(event) {
 				assert(event.channelId == chanId, 'ChannelId was incorrect.');
 				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
 				assert(event.subscription.options.priority == 6, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
 
 				testedOrder += event.subscription.options.priority;
-			});
+			}, {priority:6});
 
-			broker.on(chanId, {priority:1}, function(event) {
+			broker.on(chanId, function(event) {
 				assert(event.channelId == chanId, 'ChannelId was incorrect.');
 				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
 				assert(event.subscription.options.priority == 1, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
 
 				testedOrder += event.subscription.options.priority;
-			});
+			}, {priority:1});
 
-			broker.on(chanId, {priority:3}, function(event) {
+			broker.on(chanId, function(event) {
 				assert(event.channelId == chanId, 'ChannelId was incorrect.');
 				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
 				assert(event.subscription.options.priority == 3, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
 
 				testedOrder += event.subscription.options.priority;
-			});
+			}, {priority:3});
 
 			let result = broker.emit(chanId);
 
@@ -444,26 +468,26 @@ describe('Broker', function() {
 				testedOrder += event.subscription.options.priority;
 			};
 
-			let subId = broker.on(chanId, {priority:6}, subCallback);
+			let subId = broker.on(chanId, subCallback, {priority:6});
 
-			broker.on(chanId, {priority:1}, function(event) {
+			broker.on(chanId, function(event) {
 				assert(event.channelId == chanId, 'ChannelId was incorrect.');
 				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
 				assert(event.subscription.options.priority == 1, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
 
 				testedOrder += event.subscription.options.priority;
-			});
+			}, {priority:1});
 
-			broker.on(chanId, {priority:3}, function(event) {
+			broker.on(chanId, function(event) {
 				assert(event.channelId == chanId, 'ChannelId was incorrect.');
 				assert(event.subscription.channelId == chanId, 'Subscription channelId was incorrect.');
 				assert(event.subscription.options.priority == 3, 'Priority was incorrect ('+chanId+') ' + util.inspect(event));
 
 				testedOrder += event.subscription.options.priority;
-			});
+			}, {priority:3});
 
 			// Override with a forced option!
-			let newId = broker.on(chanId, {priority:2, force:true}, subCallback);
+			let newId = broker.on(chanId, subCallback, {priority:2, force:true});
 
 			assert(newId == subId, 'Forced subscription id is not the same as the previous id.');
 
@@ -486,30 +510,30 @@ describe('Broker', function() {
 			let correctOrder = '12345';
 			let testedOrder = '';
 
-			broker.on('emit:to:*', {id:5}, function(event) {
+			broker.on('emit:to:*', function(event) {
 				assert(event.subscription.options.id == 5, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
 				testedOrder += event.subscription.options.id;
-			});
+			}, {id:5});
 
-			broker.on('emit:to:multiple:channel:ids:in:order', {id:1}, function(event) {
+			broker.on('emit:to:multiple:channel:ids:in:order', function(event) {
 				assert(event.subscription.options.id == 1, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
 				testedOrder += event.subscription.options.id;
-			});
+			}, {id:1});
 
-			broker.on('emit:to:multiple:*', {id:4}, function(event) {
+			broker.on('emit:to:multiple:*', function(event) {
 				assert(event.subscription.options.id == 4, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
 				testedOrder += event.subscription.options.id;
-			});
+			}, {id:4});
 
-			broker.on('emit:to:multiple:channel:ids:*', {id:2}, function(event) {
+			broker.on('emit:to:multiple:channel:ids:*', function(event) {
 				assert(event.subscription.options.id == 2, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
 				testedOrder += event.subscription.options.id;
-			});
+			}, {id:2});
 
-			broker.on('emit:to:multiple:channel:*', {id:3}, function(event) {
+			broker.on('emit:to:multiple:channel:*', function(event) {
 				assert(event.subscription.options.id == 3, 'Data id was incorrect ('+chanId+') ' + util.inspect(event));
 				testedOrder += event.subscription.options.id;
-			});
+			}, {id:3});
 
 			let result = broker.emit(chanId);
 
@@ -523,6 +547,43 @@ describe('Broker', function() {
 				done();
 			}).catch(done);
 		});
+
+		it('should unsubscribe after count reaches zero', function(done) {
+			// Check default expected arguments:
+			let chanId = 'emit:with:count:3';
+			let emitted = 0;
+			let subId = broker.on(chanId, function(event) {
+				emitted++;
+			}, {count: 3});
+
+			let result1, result2, result3;
+
+			result1 = broker.emit(chanId);
+			// Verify completion of emission at promise resolution.
+			result1.then(function() {
+				assert(emitted == 1, 'Event is out of sync with count 1 ('+chanId+') count: '+emitted);
+
+				result2 = broker.emit(chanId);
+				// Verify completion of emission at promise resolution.
+				result2.then(function() {
+					assert(emitted == 2, 'Event is out of sync with count 2 ('+chanId+') count: '+emitted);
+					result3 = broker.emit(chanId);
+		
+					// Verify completion of emission at promise resolution.
+					result3.then(function() {
+						assert(emitted == 3, 'Event is out of sync with count 3 ('+chanId+') count: '+emitted);
+						
+						// Make sure the subscription has been removed.
+						let subs = broker.getSubscribers();
+
+						// Make sure it's there...
+						assert(!subs[subId], 'Options.count failed to remove subscription ('+chanId+').');
+						done();
+					}).catch(done);
+				}).catch(done);
+			}).catch(done);
+		});
+
 
 		it('should fail with an invalid channelId', function() {
 			let result;

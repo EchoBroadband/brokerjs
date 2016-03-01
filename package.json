@@ -1,14 +1,14 @@
 {
   "name": "brokerjs",
   "description": "A simple interprocess message bus for decoupling code.",
-  "version": "0.5.1",
+  "version": "0.6.1",
   "author": "Mike Whitaker <mike@echobroadband.net>",
   "contributors": [
     "Caleb Bartholomew <caleb@echobroadband.net>"
   ],
   "license": "MIT",
   "repository": "echobnet/brokerjs",
-  "homepage": "http://brokerjs.com/",
+  "homepage": "https://github.com/echobnet/brokerjs/",
   "scripts": {
     "test": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
     "jtest": "jenkins-mocha --cobertura test/*",
@@ -19,18 +19,20 @@
     "mediator",
     "message",
     "bus",
-    "decouple"
+    "decouple",
+    "message broker",
+    "brokerjs"
   ],
   "dependencies": {
     "shortid": "^2.2.4"
   },
   "devDependencies": {
-    "esdoc": "^0.4.3",
-    "istanbul": "^0.4.1",
-    "mocha": "^2.3.4"
+    "esdoc": "0.4.3",
+    "istanbul": "*",
+    "mocha": "*"
   },
   "engines": {
-    "node": ">= 4.1.0"
+    "node": ">= 5.0.0"
   },
   "files": [
     "LICENSE",

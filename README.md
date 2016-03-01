@@ -5,11 +5,33 @@
 [BrokerJS] is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces with wild-cards. It is fully documented and thoroughly tested. View documentation and examples [here].
  
 ### Version
-0.5.1
+0.6.1
+
+### Changes
+
+##### from 0.6.0 to 0.6.1   
+Fixed esdoc build errors. 
+
+##### from 0.5.1 to 0.6.0   
+`contains breaking changes!`
+
+* Changed the order of options and callback in the *broker.on* function:
+  ```javascript
+  // FROM
+  broker.on = function(channelId, options, callback){...};
+  
+  // TO
+  broker.on = function(channelId, callback, options){...};
+  ```
+  This allows for easier subscription writing; less nulls in the middle of your calls and better drop-in-compatibility with *mediator.js*.
+  
+* Added additional option parameters in *broker.on*, including:
+  * `options.context`:  This is the function context your subscription callback will inherit. (eg: *this* inside of your callback becomes whatever options.context is.)
+  * `options.count`: This is a self-destructing callback countdown. It will decrement by one each time the callback is used. Upon hitting zero, the subscription will unsubscribe itself. The original count can be read at ```options._count```
 
 ### Tech
 
-BrokerJS runs on [NodeJS] ~~and in the browser~~. It requires NodeJS 4.0.0 or greater (uses ECMA6).
+BrokerJS runs on [NodeJS] ~~and in the browser~~. It requires NodeJS 5.0.0 or greater (uses ECMA6) (recommend 5 branch over 4.1.3+, though it still may work).
 
 ### Installation
 
@@ -90,20 +112,20 @@ broker.emit('app:init', 'Init!');
 let mycallback = function(e) {
     console.log('BOB');
 };
-broker.on('a:b', {priority:100}, mycallback);
+broker.on('a:b', mycallback, {priority:100});
 
-broker.on('a:b', {priority:2}, function(e) {
+broker.on('a:b', function(e) {
     console.log('JACK');
-});
-broker.on('a:b', {priority:5}, function(e) {
+}, {priority:2});
+broker.on('a:b', function(e) {
     console.log('JIM');
-});
-broker.on('a:b', {priority:3}, function(e) {
+}, {priority:5});
+broker.on('a:b', function(e) {
     console.log('FIN');
-});
-broker.on('*', {priority:1}, function(e) {
+}, {priority:3});
+broker.on('*', function(e) {
     console.log('WHAAAAT?!');
-});
+}, {priority:1});
 
 broker.emit('a:b');
 // displays:
@@ -114,7 +136,7 @@ broker.emit('a:b');
 //    WHAAAAT?!
 
 // OVERRIDING previous options
-broker.on('a:b', {priority:1}, mycallback);
+broker.on('a:b', mycallback, {priority:1});
 
 broker.emit('a:b');
 // displays:
@@ -130,6 +152,7 @@ broker.emit('a:b');
  - Finish BrokerJS.com
  - Implement easy data return from emit.
  - Implement one-off subscription call and response helpers.
+   - *0.6.0*: Now partially obtainable with `option.count` support.
  - Implement two path response from subscribers.
  - Increase comment coverage
 
