@@ -7,7 +7,7 @@ let util = require('util');
 
 let Broker, broker;
 
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 
 /** @test {Broker} */
 describe('Broker', function() {

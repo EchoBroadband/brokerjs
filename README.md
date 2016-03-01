@@ -5,9 +5,12 @@
 [BrokerJS] is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces with wild-cards. It is fully documented and thoroughly tested. View documentation and examples [here].
  
 ### Version
-0.6.0
+0.6.1
 
 ### Changes
+
+##### from 0.6.0 to 0.6.1   
+Fixed esdoc build errors. 
 
 ##### from 0.5.1 to 0.6.0   
 `contains breaking changes!`

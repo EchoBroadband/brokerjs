@@ -1,7 +1,7 @@
 {
   "name": "brokerjs",
   "description": "A simple interprocess message bus for decoupling code.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "author": "Mike Whitaker <mike@echobroadband.net>",
   "contributors": [
     "Caleb Bartholomew <caleb@echobroadband.net>"
@@ -24,11 +24,10 @@
     "brokerjs"
   ],
   "dependencies": {
-    "esdoc": "^1.0.0",
     "shortid": "^2.2.4"
   },
   "devDependencies": {
-    "esdoc": "*",
+    "esdoc": "^1.0.0",
     "istanbul": "*",
     "mocha": "*"
   },
