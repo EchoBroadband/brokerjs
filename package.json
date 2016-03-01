@@ -27,7 +27,7 @@
     "shortid": "^2.2.4"
   },
   "devDependencies": {
-    "esdoc": "^1.0.0",
+    "esdoc": "0.4.3",
     "istanbul": "*",
     "mocha": "*"
   },
