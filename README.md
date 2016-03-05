@@ -5,15 +5,32 @@
 [BrokerJS] is an internal application message bus dedicated to decoupling classes, modules, and so on. It supports name spaces with wild-cards. It is fully documented and thoroughly tested. View documentation and examples [here].
  
 ### Version
-0.6.1
+0.6.2
 
-### Changes
+### Change Log
 
-##### from 0.6.0 to 0.6.1   
+##### from 0.6.1 to 0.6.2
+__BREAKING CHANGES__
+
+These changes make BrokerJS a bit more _Javascripty_ by allowing you to use the subscription callback a bit more easily.
+* Implemented ```event.cancelled = true``` and added tests for it. 
+* Increased code coverage
+* ```broker.on('bob', callback)``` can now accept an object with a channelId:  ```broker.on({channelId:'bob'}, callback);```
+* Subscription callbacks are now passed all arguments from the emit fuction. The event object is now the last argument passed:
+```javascript
+broker.on('app:test', function(a, b, c, event) {
+   console.log(b);  // Yields: 42
+   console.log(event.data); // Yields: undefined
+});
+broker.emit('app:test', 'fish', 42, {name:'cats'});
+```
+* _event.data_ no longer exists.
+
+##### from 0.6.0 to 0.6.1 
 Fixed esdoc build errors. 
 
 ##### from 0.5.1 to 0.6.0   
-`contains breaking changes!`
+__BREAKING CHANGES__
 
 * Changed the order of options and callback in the *broker.on* function:
   ```javascript
@@ -47,22 +64,20 @@ let broker = new Broker();
 
 // Some login controller:
 function login(name, password, callback) {
-    broker.on('login:for:'+name, function(e) { 
-        broker.off(e.subscription.subId);
-        callback(e.data.result);
-    });
-    broker.emit('auth:login', {name:name, pw:password, responseId: 'login:for:'+name});
+    broker.on('login:for:'+name, callback, {count: 1});
+    broker.emit('auth:login', name, password, 'login:for:'+name);
 }
 
 // Some auth module/class:
 function constructor() {
-    broker.on('auth:login', (e) => { return this.onAuthLogin(e); });
+    broker.on('auth:login', this.onAuthLogin.bind(this));
 }
-function onAuthLogin(event) {
+function onAuthLogin(name, password, responseId) {
     let p = new Promise((accept,reject) => {
         // Do some async DB work, auth work, etc.
         let result = true; 
-        broker.emit(event.data.responseId, {result: result, hash:'123abc'});
+        let error = null; // or populated with something.
+        broker.emit(responseId, error, result);
         accept();
     });
     return p;
@@ -71,17 +86,17 @@ function onAuthLogin(event) {
 
 Alternatively, you don't always need to return a promise, depending on how you want to use broker.
 ```javascript
-function onAuthLogin(event) {
+function onAuthLogin(responseId, event) {
     // Do some async DB work, auth work, etc.
     let result = true; 
-    broker.emit(event.data.responseId, {result: result, hash:'123abc'});
+    broker.emit(responseId, result);
 }
 ```
 
 ### Usage Example 2: * channel ids
 ```javascript
-function response(e) {
-    console.log(e.subscription.channelId + ' - ' + e.data);
+function response(message, event) {
+    console.log(event.subscription.channelId + ' - ' + message);
 }
 
 broker.on('*', response);
@@ -109,7 +124,7 @@ broker.emit('app:init', 'Init!');
 
 ### Usage Example 3: Priorities
 ```javascript
-let mycallback = function(e) {
+let mycallback = function(event) {
     console.log('BOB');
 };
 broker.on('a:b', mycallback, {priority:100});
@@ -150,7 +165,7 @@ broker.emit('a:b');
 ### Todos
 
  - Finish BrokerJS.com
- - Implement easy data return from emit.
+ - Implement easy data response from emit.
  - Implement one-off subscription call and response helpers.
    - *0.6.0*: Now partially obtainable with `option.count` support.
  - Implement two path response from subscribers.
