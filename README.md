@@ -17,7 +17,7 @@ These changes make BrokerJS a bit more _Javascripty_ by allowing you to use the 
 * Increased code coverage
 * ```broker.on('bob', callback)``` can now accept an object with a channelId:  ```broker.on({channelId:'bob'}, callback);```
 * Subscription callbacks are now passed all arguments from the emit fuction. The event object is now the last argument passed:
-```
+```javascript
 broker.on('app:test', function(a, b, c, event) {
    console.log(b);  // Yields: 42
    console.log(event.data); // Yields: undefined
